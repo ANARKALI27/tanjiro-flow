@@ -1,7 +1,10 @@
+import { useEffect, useRef, useState } from 'react'
 import { Icon, type IconName } from '../lib/icons'
-import { splitPath } from '../lib/format'
+import { splitPath, parentOf } from '../lib/format'
 import { useNav } from '../stores/navigation'
 import { useSettings } from '../stores/settings'
+import { useSelection } from '../stores/selection'
+import { api } from '../lib/ipc'
 import type { SortKey, ViewMode } from '../lib/types'
 import { useFileActions } from '../hooks/useFileActions'
 
@@ -29,12 +32,55 @@ export function Toolbar({ pane = 0 }: { pane?: 0 | 1 }) {
   const showHidden = useSettings((s) => s.showHidden)
   const setSetting = useSettings((s) => s.set)
   const actions = useFileActions(pane)
+  const selection = useSelection()
 
   const parts = splitPath(path)
 
   const goToCrumb = (index: number) => {
     const target = parts.slice(0, index + 1).join('\\')
     nav.go(/^[A-Za-z]:$/.test(target) ? `${target}\\` : target, pane)
+  }
+
+  // Clicking empty space in the breadcrumb row (not a crumb button) turns
+  // it into a plain text field, like Explorer's address bar — so a path
+  // copied elsewhere (e.g. our own "Copy as path") can be pasted and
+  // navigated to directly instead of only ever being clickable segments.
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(path)
+  const editRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) {
+      editRef.current?.focus()
+      editRef.current?.select()
+    }
+  }, [editing])
+
+  const startEditing = () => {
+    setEditValue(path)
+    setEditing(true)
+  }
+
+  const commitEdit = async () => {
+    const value = editValue.trim().replace(/^"(.*)"$/, '$1').trim()
+    setEditing(false)
+    if (!value || value === path) return
+    try {
+      const entry = await api.entry(value)
+      if (entry.isDir) {
+        nav.go(value, pane)
+      } else {
+        const parent = parentOf(value)
+        if (parent) {
+          nav.go(parent, pane)
+          selection.select(pane, entry.path, entry)
+        }
+      }
+    } catch {
+      // Not resolvable as either — hand it to normal navigation anyway so
+      // the pane's own "Couldn't open this folder" state can explain why.
+      nav.go(value, pane)
+    }
   }
 
   const cycleSort = (key: SortKey) => {
@@ -86,26 +132,47 @@ export function Toolbar({ pane = 0 }: { pane?: 0 | 1 }) {
           </button>
         </div>
 
-        <div className="crumbs">
-          {parts.length === 0 ? (
-            <span className="crumb" style={{ color: 'var(--text-faint)' }}>
-              No folder open
-            </span>
-          ) : (
-            parts.map((part, i) => (
-              <span key={`${part}-${i}`} style={{ display: 'contents' }}>
-                {i > 0 && (
-                  <span className="crumb-sep">
-                    <Icon name="chevronRight" size={12} />
-                  </span>
-                )}
-                <button className="crumb" onClick={() => goToCrumb(i)}>
-                  {part}
-                </button>
+        {editing ? (
+          <input
+            ref={editRef}
+            className="crumbs-edit"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => setEditing(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitEdit()
+              else if (e.key === 'Escape') setEditing(false)
+            }}
+            placeholder="Paste or type a path…"
+            spellCheck={false}
+          />
+        ) : (
+          <div
+            className="crumbs"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && path) startEditing()
+            }}
+          >
+            {parts.length === 0 ? (
+              <span className="crumb" style={{ color: 'var(--text-faint)' }}>
+                No folder open
               </span>
-            ))
-          )}
-        </div>
+            ) : (
+              parts.map((part, i) => (
+                <span key={`${part}-${i}`} style={{ display: 'contents' }}>
+                  {i > 0 && (
+                    <span className="crumb-sep">
+                      <Icon name="chevronRight" size={12} />
+                    </span>
+                  )}
+                  <button className="crumb" onClick={() => goToCrumb(i)}>
+                    {part}
+                  </button>
+                </span>
+              ))
+            )}
+          </div>
+        )}
 
         <button className="btn btn-sm" onClick={actions.newFolder} disabled={!path}>
           <Icon name="folderPlus" size={15} />

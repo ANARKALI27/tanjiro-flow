@@ -480,6 +480,23 @@
   place-items: center;
 }
 
+.crumbs-edit {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 12.3px;
+  font-family: inherit;
+  outline: none;
+}
+.crumbs-edit::placeholder {
+  color: var(--text-faint);
+}
+
 .segmented {
   display: flex;
   gap: 2px;

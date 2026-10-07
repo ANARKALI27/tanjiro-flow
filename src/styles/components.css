@@ -758,8 +758,11 @@
 }
 
 /* Rubber-band drag-select rectangle. Fixed-positioned in viewport coords
-   (see FileBrowser.tsx) so it stays correct regardless of scroll, virtual
-   list offsets, or which view mode is active underneath it. */
+   and rendered via a React portal straight into <body> (see
+   FileBrowser.tsx) -- `.stage-content` up the tree has `backdrop-filter`,
+   which creates its own containing block for `position: fixed`
+   descendants, so without the portal this would be offset by
+   `.stage-content`'s own position instead of tracking the real cursor. */
 .marquee {
   position: fixed;
   z-index: 5;

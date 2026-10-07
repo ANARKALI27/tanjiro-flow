@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence } from 'framer-motion'
 import { useDirectory } from '../hooks/useDirectory'
 import { useFileActions } from '../hooks/useFileActions'
@@ -562,17 +563,19 @@ export function FileBrowser({
         {unreadable > 0 && <span>{unreadable} couldn’t be read</span>}
       </div>
 
-      {marqueeRect && (
-        <div
-          className="marquee"
-          style={{
-            left: marqueeRect.x,
-            top: marqueeRect.y,
-            width: marqueeRect.w,
-            height: marqueeRect.h,
-          }}
-        />
-      )}
+      {marqueeRect &&
+        createPortal(
+          <div
+            className="marquee"
+            style={{
+              left: marqueeRect.x,
+              top: marqueeRect.y,
+              width: marqueeRect.w,
+              height: marqueeRect.h,
+            }}
+          />,
+          document.body,
+        )}
 
       <AnimatePresence>
         {ctx && (

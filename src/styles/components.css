@@ -1,0 +1,1728 @@
+/* ===========================================================================
+   TOP BAR
+   =========================================================================== */
+.topbar {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px 0 0;
+  height: var(--topbar-height);
+  transition: grid-template-columns var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+  /* Was fully transparent — fine over the plain ambient glow, but text and
+     icons here would camouflage against a busy image/video background or an
+     overlay effect. A visible glass panel with a border fixes that without
+     losing the floating look. */
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+.topbar[data-collapsed="true"] {
+  --sidebar-width: 62px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 16px;
+  min-width: 0;
+}
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 9px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+}
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.15;
+}
+.brand-name {
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.brand-name span {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.brand-tagline {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The command bar. It is a button, not an input — pressing it opens the
+   palette, which is where the real input lives. One code path, one behaviour. */
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(560px, 100%);
+  margin: 0 auto;
+  height: 34px;
+  padding: 0 8px 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  color: var(--text-faint);
+  cursor: text;
+  transition: border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.search-trigger:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.search-trigger:focus-visible {
+  box-shadow: var(--glow);
+}
+.search-trigger-text {
+  flex: 1;
+  text-align: left;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===========================================================================
+   BUTTONS
+   =========================================================================== */
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.icon-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.icon-btn:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+.icon-btn[data-active="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-blue)));
+  border-color: transparent;
+  color: var(--accent-contrast);
+  box-shadow: 0 6px 20px -8px var(--accent);
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-blue)));
+}
+.btn-danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 34%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-dim);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.btn-sm {
+  height: 27px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* ===========================================================================
+   SIDEBAR
+   =========================================================================== */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 10px 12px 12px;
+  gap: 2px;
+  /* Same reasoning as .topbar: an explicit glass panel + border keeps the
+     sidebar readable over any background instead of relying on bare text. */
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-right: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.side-heading {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 14px 10px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  /* .sidebar-scroll is a column flex container; without this, a flex item
+     with its own overflow:hidden loses the default min-height:auto floor
+     and the flex-shrink algorithm can crush it toward 0 height whenever
+     total sidebar content (nav items + places + drives) exceeds the
+     viewport, clipping this heading's uppercase text down to thin slivers
+     instead of letting the container's overflow-y:auto just scroll. */
+  flex-shrink: 0;
+}
+.side-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: calc(33px * var(--density));
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12.8px;
+  font-weight: 540;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.side-item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.side-item[data-active="true"] {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.side-item[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 17px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+}
+.side-item svg {
+  flex: none;
+  opacity: 0.9;
+}
+.side-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Without an explicit line-height, the label's line box is exactly
+     font-size tall — descenders (g, y, p) can clip against the row's own
+     overflow:hidden at narrower sidebar widths. */
+  line-height: 1.5;
+}
+.side-count {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.sidebar[data-collapsed="true"] .side-label,
+.sidebar[data-collapsed="true"] .side-count,
+.sidebar[data-collapsed="true"] .side-heading,
+.sidebar[data-collapsed="true"] .drive-mini-meta {
+  display: none;
+}
+.sidebar[data-collapsed="true"] .side-item {
+  justify-content: center;
+  padding: 0;
+}
+
+.drive-mini {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease);
+}
+.drive-mini:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.drive-mini-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.drive-mini-top .side-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drive-mini-meta {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.meter {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+  margin-top: 5px;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+  transition: width var(--dur-slow) var(--ease);
+}
+.meter-fill[data-level="warn"] {
+  background: linear-gradient(90deg, var(--warn), var(--accent-pink));
+}
+.meter-fill[data-level="critical"] {
+  background: linear-gradient(90deg, var(--danger), var(--accent-pink));
+}
+
+/* ===========================================================================
+   TOOLBAR / BREADCRUMBS
+   =========================================================================== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--toolbar-height);
+  padding: 0 10px 0 6px;
+  flex: none;
+  /* Belt-and-suspenders only: .toolbar-scroll below is what actually
+     absorbs narrow-width overflow now, so this practically never triggers,
+     but it stays as a last-resort safety net. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: auto;
+}
+.toolbar::-webkit-scrollbar {
+  height: 4px;
+}
+/* Nav icons, the crumb trail, "New" and sort-by all live in here. At a
+   narrow pane width (dual-pane, a collapsed window) this is what shrinks
+   and, failing that, scrolls — while the hidden-files eye toggle and the
+   view-mode switcher stay outside it (siblings in .toolbar, flex-shrink:0)
+   so they're never the thing that gets pushed out of view. Previously
+   *everything* lived in one flex row with only .crumbs designed to shrink,
+   so once a pane got narrow enough, the toolbar's own overflow-x:auto (a
+   4px, easy-to-miss scrollbar) was the only way to reach the view-mode
+   icons — in dual-pane they'd sit just past the visible edge, looking
+   "cut off" rather than reachable. */
+.toolbar-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.toolbar-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  height: 30px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.crumb {
+  padding: 0 8px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12.3px;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.crumb:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.crumb:last-child {
+  color: var(--text);
+  font-weight: 550;
+}
+.crumb-sep {
+  color: var(--text-faint);
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  /* .toolbar is a flex row where .crumbs (flex:1, min-width:0) is meant to
+     be the only element that ever shrinks. Without this, .segmented itself
+     is a flex-shrink:1 child by default and the browser can squeeze this
+     whole group narrower than its buttons' combined natural width; since
+     .segmented has no overflow:hidden of its own, the buttons then spill
+     out of its shrunk box and visually overlap whatever comes right after
+     it in the row (worst in dual-pane mode, at half toolbar width). */
+  flex-shrink: 0;
+}
+.segmented .icon-btn {
+  width: 27px;
+  height: 25px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+/* Sort-by buttons share the icon-btn/segmented look but carry a text label
+   (e.g. "Date modified"). Without this, they inherit the icon-only
+   width:27px/height:25px above, and — lacking white-space:nowrap — the
+   browser is free to shrink the button down to its narrowest word and wrap
+   the rest onto a second line, which overflows the 25px-tall pill and
+   overlaps neighboring toolbar controls (worst in dual-pane mode, where
+   each pane is half-width). */
+.segmented .icon-btn.sort-item {
+  width: auto;
+  height: auto;
+  min-height: 25px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* ===========================================================================
+   CARDS
+   =========================================================================== */
+.card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+}
+.card-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin: 0 0 2px;
+}
+.card-sub {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 12px;
+}
+.quick-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 15px;
+  min-height: 116px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+.quick-card::after {
+  content: "";
+  position: absolute;
+  inset: -40% -30% auto auto;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: var(--tint, var(--accent));
+  opacity: 0.16;
+  filter: blur(34px);
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.quick-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.quick-card:hover::after {
+  opacity: 0.3;
+}
+.quick-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--tint, var(--accent)) 16%, transparent);
+  color: var(--tint, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--tint, var(--accent)) 26%, transparent);
+}
+.quick-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.quick-desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.quick-stat {
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.drive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.drive-card {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 15px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.drive-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+.drive-card[data-ready="false"] {
+  opacity: 0.55;
+  cursor: default;
+}
+.drive-card[data-ready="false"]:hover {
+  transform: none;
+}
+.drive-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.drive-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.drive-letter {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.drive-figures {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Storage breakdown */
+.stack-bar {
+  display: flex;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--surface-3);
+  gap: 2px;
+}
+.stack-seg {
+  height: 100%;
+  transition: width var(--dur-slow) var(--ease);
+}
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 13px;
+}
+.legend-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 3px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.legend-row:hover {
+  color: var(--text);
+}
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+.legend-val {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Customize page header — see the comment in SettingsPage.tsx for why this
+   needs its own glass backing rather than relying on text-shadow alone. */
+.settings-header {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 14px;
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  /* Same reasoning as .topbar/.sidebar just above: without its own stacking
+     context, this panel can end up painted behind the fixed video/image
+     background layer instead of over it. */
+  position: relative;
+  z-index: 1;
+}
+
+/* ===========================================================================
+   FILE VIEWS
+   =========================================================================== */
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
+  gap: 8px;
+  padding: 10px 12px 18px;
+  align-content: start;
+}
+
+/* Rubber-band drag-select rectangle. Fixed-positioned in viewport coords
+   (see FileBrowser.tsx) so it stays correct regardless of scroll, virtual
+   list offsets, or which view mode is active underneath it. */
+.marquee {
+  position: fixed;
+  z-index: 5;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Custom multi-item drag preview (FileBrowser.tsx onDragStart) — positioned
+   off-screen by default since it's only ever shown via setDragImage, which
+   snapshots it rather than rendering it in place. */
+.drag-badge {
+  position: fixed;
+  top: -200px;
+  left: -200px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow-pop);
+}
+.file-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text);
+  text-align: center;
+  min-width: 0;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.file-card:hover {
+  background: color-mix(in srgb, var(--surface-solid) 55%, var(--surface-2));
+  border-color: var(--border);
+}
+.file-card[data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.file-card[data-selected="true"]:hover {
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface-2));
+}
+.file-card[data-cut="true"] {
+  opacity: 0.45;
+}
+.file-name {
+  font-size: 11.8px;
+  font-weight: 560;
+  line-height: 1.3;
+  width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+.file-meta {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.thumb {
+  width: calc(var(--card-size) * 0.52);
+  height: calc(var(--card-size) * 0.52);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: none;
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.thumb[data-plain="true"] {
+  /* Was fully transparent, so a folder/video/app icon (a thin, ~half-size
+     glyph) sat in a bare box next to real image thumbnails that fill their
+     box edge-to-edge — the two looked like they belonged to different
+     grids. A consistent tinted tile (color set per-kind inline, see
+     Thumb.tsx) gives every card the same visual weight and footprint. */
+  background: var(--thumb-tint, var(--surface-2));
+  border-color: var(--thumb-tint-border, var(--border));
+}
+.thumb img,
+.thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* List / details */
+.file-rows {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 18px;
+}
+.row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  height: calc(34px * var(--density));
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text);
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 520;
+  transition: background var(--dur-fast) var(--ease);
+}
+.row:hover {
+  background: var(--surface-2);
+}
+.row[data-selected="true"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+}
+.row[data-cut="true"] {
+  opacity: 0.45;
+}
+.row-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.row-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-cell {
+  color: var(--text-dim);
+  font-size: 11.8px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rows-header {
+  display: grid;
+  gap: 12px;
+  padding: 0 18px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.rows-header button {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.rows-header button:hover {
+  color: var(--text-dim);
+}
+
+/* Gallery */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-size) * 1.7), 1fr));
+  gap: 10px;
+  padding: 12px;
+  align-content: start;
+}
+.gallery-item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  padding: 0;
+}
+.gallery-item[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+.gallery-item img,
+.gallery-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gallery-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+}
+.gallery-cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 18px 10px 8px;
+  font-size: 11.5px;
+  text-align: left;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dual pane */
+.dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+  flex: 1;
+}
+.dual > * {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* min-width:0 alone only zeroes this item's own box minimum — it does
+     NOT zero its min-content CONTRIBUTION to the grid's `1fr` track
+     sizing. A grid track's automatic minimum is the item's min-content
+     size unless the item's own overflow is non-visible. Without this,
+     a pane whose toolbar can no longer shrink (flex-shrink:0 on its
+     controls, so drag/drop and sort labels never overlap) drags the
+     whole 1fr column wide enough to fit that toolbar at full size,
+     unbalancing the two panes and pushing pane 2's rightmost controls
+     out under the side panel. */
+  overflow: hidden;
+}
+.dual > *:first-child {
+  border-right: 1px solid var(--border);
+}
+.pane-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.pane-tag {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 6px 0 0 12px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+}
+/* Was `.pane[data-focused="true"] .pane-tag` — but `.pane-tag` is a sibling
+   of the `.pane` element (both live in this `.pane-wrap`), never a
+   descendant of it, so that selector could never match. `data-focused` now
+   lives on `.pane-wrap` itself, the actual ancestor of both. */
+.pane-wrap[data-focused="true"] .pane-tag {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ===========================================================================
+   CONTEXT MENU
+   =========================================================================== */
+.ctx {
+  position: fixed;
+  z-index: 200;
+  min-width: 222px;
+  padding: 5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+  backdrop-filter: blur(calc(var(--blur) * 1.6));
+  box-shadow: var(--shadow-pop);
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 31px;
+  padding: 0 9px;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease);
+}
+.ctx-item:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.ctx-item:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ctx-item[data-danger="true"] {
+  color: var(--danger);
+}
+.ctx-item[data-danger="true"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+}
+.ctx-item svg {
+  flex: none;
+  opacity: 0.85;
+}
+.ctx-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ctx-hint {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+}
+.ctx-sep {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--border);
+}
+.ctx-sub {
+  position: relative;
+}
+.ctx-submenu {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: -5px;
+  min-width: 190px;
+  padding: 5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  backdrop-filter: blur(calc(var(--blur) * 1.6));
+  box-shadow: var(--shadow-pop);
+}
+
+/* ===========================================================================
+   PANELS (preview / quick actions)
+   =========================================================================== */
+.panel {
+  width: 290px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.panel-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  /* Quick Actions/Preview sit deep inside the per-route transition wrapper,
+     where backdrop-filter alone (and --surface's very low alpha) doesn't
+     reliably show up against the animated background — same fix as
+     .status-bar: a real tinted color that doesn't depend on compositing. */
+  background: color-mix(in srgb, var(--surface-solid) 78%, transparent);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+  position: relative;
+}
+.panel-head {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 11px;
+}
+.preview-stage {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  max-height: 230px;
+}
+.preview-stage img,
+.preview-stage video,
+.preview-stage embed {
+  max-width: 100%;
+  max-height: 230px;
+  display: block;
+}
+.preview-text {
+  margin: 0;
+  padding: 11px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  max-height: 230px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+.kv {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  gap: 6px 10px;
+  font-size: 11.8px;
+}
+.kv dt {
+  color: var(--text-faint);
+}
+.kv dd {
+  margin: 0;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.qa-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.qa-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 4px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.qa-btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.qa-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.qa-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ===========================================================================
+   DIALOGS + PALETTE
+   =========================================================================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 5, 12, 0.55);
+  backdrop-filter: blur(3px);
+  padding: 24px;
+}
+.dialog {
+  width: min(440px, 100%);
+  max-height: 84vh;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
+  backdrop-filter: blur(calc(var(--blur) * 1.4));
+  box-shadow: var(--shadow-pop);
+  padding: 20px;
+}
+.dialog-wide {
+  width: min(560px, 100%);
+}
+.dialog h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 620;
+}
+.dialog p.dialog-sub {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.input {
+  width: 100%;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-deep);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.palette {
+  width: min(620px, 100%);
+  margin-top: 8vh;
+  align-self: start;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 93%, transparent);
+  backdrop-filter: blur(calc(var(--blur) * 1.6));
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 68vh;
+}
+.palette-input {
+  height: 52px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  padding: 0 18px;
+  font-size: 14.5px;
+  outline: none;
+  color: var(--text);
+  flex: none;
+}
+.palette-input::placeholder {
+  color: var(--text-faint);
+}
+.palette-list {
+  overflow-y: auto;
+  padding: 6px;
+  min-height: 0;
+}
+.palette-group {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 10px 10px 4px;
+}
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font-size: 12.8px;
+}
+.palette-item[data-active="true"] {
+  background: var(--accent-soft);
+}
+.palette-item .sub {
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+.palette-foot {
+  flex: none;
+  display: flex;
+  gap: 14px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+/* ===========================================================================
+   TOASTS
+   =========================================================================== */
+.toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 330px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow-pop);
+}
+.toast-icon {
+  flex: none;
+  margin-top: 1px;
+}
+.toast[data-tone="error"] .toast-icon {
+  color: var(--danger);
+}
+.toast[data-tone="success"] .toast-icon {
+  color: var(--ok);
+}
+.toast[data-tone="info"] .toast-icon {
+  color: var(--accent);
+}
+.toast-title {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.toast-body {
+  font-size: 11.8px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.toast-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+/* ===========================================================================
+   FORM CONTROLS (settings)
+   =========================================================================== */
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.field:last-child {
+  border-bottom: none;
+}
+.field-label {
+  font-size: 12.8px;
+}
+.field-help {
+  font-size: 11.3px;
+  color: var(--text-faint);
+  margin-top: 2px;
+  max-width: 46ch;
+}
+.switch {
+  width: 38px;
+  height: 21px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-3);
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.switch[data-on="true"] {
+  background: var(--accent);
+  border-color: transparent;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  transition: translate var(--dur-fast) var(--ease);
+}
+.switch[data-on="true"]::after {
+  translate: 17px 0;
+}
+.range {
+  width: 168px;
+  accent-color: var(--accent);
+}
+.swatches {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.swatch[data-active="true"] {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.seg-choice {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.seg-choice button {
+  padding: 4px 11px;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11.8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.seg-choice button[data-active="true"] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+/* A stacked icon-over-label tile (Share sheet methods, Appearance theme
+   swatches). `.btn` alone leaves justify-content at its flex-start default,
+   which in column mode packs content to the TOP of a taller fixed-height
+   button — this centers it on both axes instead. */
+.btn-stack {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Two-tone preview: the theme's base surface colour on the left, its accent
+   colour as a solid wedge on the right, so the swatch actually communicates
+   what picking the theme *does* rather than being an unreadable dark square. */
+.theme-swatch {
+  width: 40px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  flex: none;
+  background: linear-gradient(
+    to right,
+    var(--theme-swatch-base, var(--surface-2)) 0%,
+    var(--theme-swatch-base, var(--surface-2)) 58%,
+    var(--theme-swatch-accent, var(--accent)) 58%,
+    var(--theme-swatch-accent, var(--accent)) 100%
+  );
+}
+
+/* ===========================================================================
+   MISC
+   =========================================================================== */
+.empty {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 54px 20px;
+  text-align: center;
+  color: var(--text-faint);
+}
+.empty-title {
+  font-size: 13.5px;
+  color: var(--text-dim);
+  font-weight: 550;
+}
+.empty-body {
+  font-size: 12px;
+  max-width: 44ch;
+  line-height: 1.55;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10.5px;
+  font-weight: 550;
+  letter-spacing: 0.3px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.badge[data-tone="muted"] {
+  border-color: var(--border);
+  background: var(--surface-2);
+  color: var(--text-faint);
+}
+
+.status-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 27px;
+  padding: 0 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  /* Same reasoning as .topbar/.sidebar/.settings-header: plain text over a
+     busy video background or file thumbnails reads as camouflaged without
+     its own opaque-ish backing. This sits deeply nested inside the
+     per-route motion.div (App.tsx), several levels below .topbar/.sidebar
+     in the tree, where in practice backdrop-filter's "blur what's behind
+     me" doesn't reliably show any effect (compositing layers created by
+     ancestors in between block it from seeing the video layer) — so unlike
+     .topbar/.sidebar this uses an actual tinted color via color-mix rather
+     than leaning on translucency + blur alone, which guarantees contrast
+     regardless of how many stacking contexts sit in between. */
+  background: color-mix(in srgb, var(--surface-solid) 70%, transparent);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  position: relative;
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-3);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    var(--surface-2) 37%,
+    var(--surface) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* App boot loading screen — a brief animated cover over the whole window
+   while the app's stores/backend event listeners initialize, so the user
+   never sees an unstyled/empty flash. Removed from the DOM once it fades
+   out (see LoadingScreen.tsx); respects the theme's own accent color. */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--bg, #070912);
+}
+.loading-screen-mark {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+}
+.loading-screen-glow {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-soft) 0%, transparent 70%);
+  filter: blur(2px);
+  animation: loading-pulse 1.8s ease-in-out infinite;
+}
+.loading-screen-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: var(--accent-soft);
+  animation: spin 1.1s linear infinite;
+}
+.loading-screen-badge {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px -6px rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+}
+.loading-screen-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.loading-screen-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.loading-screen-name {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+.loading-screen-name span {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.loading-screen-tagline {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+@keyframes loading-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}

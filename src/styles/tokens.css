@@ -1,0 +1,246 @@
+/* ---------------------------------------------------------------------------
+   Tanjiro Flow design tokens
+
+   Every visual property the customization panel can change is a CSS custom
+   property here. Nothing in the UI hardcodes a color, a radius or a blur —
+   the settings store writes these variables onto <html> at runtime, which is
+   what makes live theming (and a future .ana-theme file) possible without
+   re-rendering or rebuilding anything.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* --- shape ------------------------------------------------------------ */
+  --radius-xs: calc(var(--radius) * 0.4);
+  --radius-sm: calc(var(--radius) * 0.65);
+  --radius-lg: calc(var(--radius) * 1.5);
+  --radius-pill: 999px;
+  --radius: 14px;
+
+  /* --- glass ------------------------------------------------------------ */
+  --blur: 18px;
+  --surface-alpha: 1;
+
+  /* --- layout ----------------------------------------------------------- */
+  --sidebar-width: 244px;
+  --topbar-height: 56px;
+  --toolbar-height: 48px;
+  --density: 1;
+  --card-size: 118px;
+
+  /* --- motion ----------------------------------------------------------- */
+  --motion: 1;
+  --dur-fast: calc(120ms * var(--motion));
+  --dur: calc(200ms * var(--motion));
+  --dur-slow: calc(340ms * var(--motion));
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* --- type ------------------------------------------------------------- */
+  --font: "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, -apple-system,
+    sans-serif;
+  --font-mono: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+
+  /* --- text legibility shadow --------------------------------------------
+     Keeps text readable over a busy image/video background or an overlay
+     effect. Dark shadow works for dark themes (shadow color recedes into
+     the background) but a black shadow on a *light* theme's near-white
+     surfaces just smudges the text instead of helping it — so this is a
+     token, overridden per theme below, not a hardcoded value on body. */
+  --text-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --text-shadow-2: 0 0px 1px rgba(0, 0, 0, 0.25);
+}
+
+/* ===========================================================================
+   MIDNIGHT — the default. Deep navy, purple/blue/pink lighting.
+   =========================================================================== */
+[data-theme="midnight"] {
+  --bg: #070912;
+  --bg-deep: #05060d;
+  --bg-glow-1: rgba(124, 92, 255, 0.16);
+  --bg-glow-2: rgba(61, 139, 255, 0.13);
+  --bg-glow-3: rgba(255, 92, 168, 0.09);
+
+  --surface: rgba(255, 255, 255, 0.038);
+  --surface-2: rgba(255, 255, 255, 0.065);
+  --surface-3: rgba(255, 255, 255, 0.095);
+  --surface-solid: #0e1222;
+
+  --border: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --text: #eef1fb;
+  --text-dim: #99a2c2;
+  --text-faint: #646d8c;
+
+  --accent: #7c5cff;
+  --accent-soft: rgba(124, 92, 255, 0.16);
+  --accent-blue: #3d8bff;
+  --accent-pink: #ff5ca8;
+  --accent-contrast: #ffffff;
+
+  --ok: #3ddc97;
+  --warn: #ffb648;
+  --danger: #ff5f6d;
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 18px 40px -22px rgba(0, 0, 0, 0.9);
+  --shadow-pop: 0 24px 60px -18px rgba(0, 0, 0, 0.85);
+  --glow: 0 0 0 1px rgba(124, 92, 255, 0.3), 0 8px 30px -8px rgba(124, 92, 255, 0.35);
+}
+
+/* ===========================================================================
+   AURORA — cooler, greener highlights over the same navy base.
+   =========================================================================== */
+[data-theme="aurora"] {
+  --bg: #050e14;
+  --bg-deep: #03080c;
+  --bg-glow-1: rgba(58, 226, 197, 0.14);
+  --bg-glow-2: rgba(79, 142, 255, 0.13);
+  --bg-glow-3: rgba(167, 108, 255, 0.1);
+
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --surface-3: rgba(255, 255, 255, 0.1);
+  --surface-solid: #0a1820;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  --text: #e8f6f8;
+  --text-dim: #8fa8b3;
+  --text-faint: #5b7280;
+
+  --accent: #3ae2c5;
+  --accent-soft: rgba(58, 226, 197, 0.15);
+  --accent-blue: #4f8eff;
+  --accent-pink: #a76cff;
+  --accent-contrast: #04211c;
+
+  --ok: #3ddc97;
+  --warn: #ffc65c;
+  --danger: #ff6b7a;
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 40px -22px rgba(0, 0, 0, 0.9);
+  --shadow-pop: 0 24px 60px -18px rgba(0, 0, 0, 0.85);
+  --glow: 0 0 0 1px rgba(58, 226, 197, 0.32), 0 8px 30px -8px rgba(58, 226, 197, 0.3);
+}
+
+/* ===========================================================================
+   AMOLED — true black for OLED panels. No glow washes, minimal elevation.
+   =========================================================================== */
+[data-theme="amoled"] {
+  --bg: #000000;
+  --bg-deep: #000000;
+  --bg-glow-1: rgba(124, 92, 255, 0.1);
+  --bg-glow-2: rgba(0, 0, 0, 0);
+  --bg-glow-3: rgba(0, 0, 0, 0);
+
+  --surface: rgba(255, 255, 255, 0.032);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --surface-3: rgba(255, 255, 255, 0.1);
+  --surface-solid: #0a0a0c;
+
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.17);
+
+  --text: #f4f5f9;
+  --text-dim: #9096a8;
+  --text-faint: #5d6274;
+
+  --accent: #8f74ff;
+  --accent-soft: rgba(143, 116, 255, 0.16);
+  --accent-blue: #4a93ff;
+  --accent-pink: #ff69b0;
+  --accent-contrast: #ffffff;
+
+  --ok: #3ddc97;
+  --warn: #ffb648;
+  --danger: #ff5f6d;
+
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, none;
+  --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 1);
+  --glow: 0 0 0 1px rgba(143, 116, 255, 0.34);
+}
+
+/* ===========================================================================
+   DAYBREAK — the light theme. Same structure, inverted surfaces.
+   =========================================================================== */
+[data-theme="daybreak"] {
+  --bg: #f4f5fb;
+  --bg-deep: #e9ebf5;
+  --bg-glow-1: rgba(124, 92, 255, 0.12);
+  --bg-glow-2: rgba(61, 139, 255, 0.1);
+  --bg-glow-3: rgba(255, 92, 168, 0.08);
+
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(255, 255, 255, 0.92);
+  --surface-3: #ffffff;
+  --surface-solid: #ffffff;
+
+  --border: rgba(16, 20, 40, 0.09);
+  --border-strong: rgba(16, 20, 40, 0.17);
+
+  --text: #141834;
+  --text-dim: #565d7e;
+  --text-faint: #858ca8;
+
+  --accent: #6b42ff;
+  --accent-soft: rgba(107, 66, 255, 0.12);
+  --accent-blue: #1f6feb;
+  --accent-pink: #e5397f;
+  --accent-contrast: #ffffff;
+
+  --ok: #17a673;
+  --warn: #c77700;
+  --danger: #d93544;
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 12px 30px -20px rgba(20, 24, 52, 0.35);
+  --shadow-pop: 0 24px 60px -18px rgba(20, 24, 52, 0.28);
+  --glow: 0 0 0 1px rgba(107, 66, 255, 0.28), 0 8px 24px -10px rgba(107, 66, 255, 0.3);
+
+  /* Daybreak's surfaces are near-opaque white, so a dark legibility shadow
+     has nothing to blend into — it just reads as smudged/blurry text. A
+     faint cool shadow keeps just enough lift for text over the ambient
+     glow without muddying text that's already sitting on a light card. */
+  --text-shadow-1: 0 1px 1px rgba(20, 24, 52, 0.1);
+  --text-shadow-2: 0 0px 0px rgba(0, 0, 0, 0);
+}
+
+/* ===========================================================================
+   MINIMAL — dark, but no glow and flat surfaces. For people who find the
+   default too much.
+   =========================================================================== */
+[data-theme="minimal"] {
+  --bg: #121317;
+  --bg-deep: #0d0e11;
+  --bg-glow-1: rgba(0, 0, 0, 0);
+  --bg-glow-2: rgba(0, 0, 0, 0);
+  --bg-glow-3: rgba(0, 0, 0, 0);
+
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.075);
+  --surface-3: rgba(255, 255, 255, 0.11);
+  --surface-solid: #1a1c21;
+
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text: #e9eaee;
+  --text-dim: #9a9da8;
+  --text-faint: #6b6e7a;
+
+  --accent: #9aa0ff;
+  --accent-soft: rgba(154, 160, 255, 0.14);
+  --accent-blue: #7fa8ff;
+  --accent-pink: #d98bbd;
+  --accent-contrast: #14151a;
+
+  --ok: #56c596;
+  --warn: #d9a441;
+  --danger: #e06c75;
+
+  --shadow-card: none;
+  --shadow-pop: 0 20px 44px -22px rgba(0, 0, 0, 0.9);
+  --glow: 0 0 0 1px rgba(154, 160, 255, 0.3);
+}

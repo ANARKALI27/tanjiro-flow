@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capability set for the Tanjiro Flow main window","local":true,"windows":["main"],"permissions":["core:default","dialog:default","fs:allow-read-text-file","fs:allow-write-text-file"]}}

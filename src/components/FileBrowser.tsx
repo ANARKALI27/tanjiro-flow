@@ -10,6 +10,7 @@ import { useClipboard } from '../stores/clipboard'
 import { FileGrid, FileRows } from './FileGrid'
 import { GalleryView } from './GalleryView'
 import { ContextMenu, type MenuEntry } from './ContextMenu'
+import { Toolbar } from './Toolbar'
 import { buildFileMenu } from './FileContextMenu'
 import { Empty, Spinner } from './Primitives'
 import { notify } from '../stores/notifications'
@@ -464,12 +465,15 @@ export function FileBrowser({
 
   if (!path) {
     return (
-      <div className="scroll-area" onClick={handleBackgroundClick}>
-        <Empty
-          icon="folder"
-          title="No folder open"
-          body="Pick a place from the sidebar to start browsing."
-        />
+      <div className="pane" data-focused={isActive} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }} onClick={focusPane}>
+        <Toolbar pane={pane} />
+        <div className="scroll-area" onClick={handleBackgroundClick}>
+          <Empty
+            icon="folder"
+            title="No folder open"
+            body="Pick a place from the sidebar to start browsing."
+          />
+        </div>
       </div>
     )
   }
@@ -489,6 +493,7 @@ export function FileBrowser({
       style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
       onClick={focusPane}
     >
+      <Toolbar pane={pane} />
       <div
         ref={scrollRef}
         className="scroll-area"

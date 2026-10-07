@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../lib/icons'
 import { useNav } from '../stores/navigation'
 import {
@@ -16,6 +16,8 @@ import { Field, Segmented, Slider, Switch } from '../components/Primitives'
 import { dialogs } from '../stores/dialogs'
 import { notify } from '../stores/notifications'
 import { save, open as openFileDialog } from '@tauri-apps/plugin-dialog'
+import { api } from '../lib/ipc'
+import { asFlowError } from '../lib/ipc'
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs'
 
 const SECTION_LABELS: { key: SectionKey; label: string }[] = [
@@ -87,6 +89,37 @@ export function SettingsPage() {
   const tab = useNav((n) => n.settingsTab)
   const setTab = useNav((n) => n.setSettingsTab)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Default file manager — live OS state, not a persisted setting, so it's
+  // tracked locally rather than in the zustand settings store.
+  const [defaultManager, setDefaultManagerState] = useState<boolean | null>(null)
+  const [defaultManagerBusy, setDefaultManagerBusy] = useState(false)
+
+  useEffect(() => {
+    api
+      .defaultManagerStatus()
+      .then(setDefaultManagerState)
+      .catch(() => setDefaultManagerState(null))
+  }, [])
+
+  const toggleDefaultManager = async (enable: boolean) => {
+    setDefaultManagerBusy(true)
+    try {
+      await api.defaultManagerSet(enable)
+      setDefaultManagerState(enable)
+      notify.success(
+        enable ? 'Tanjiro Flow is now your default file manager' : 'File Explorer is back to default',
+        enable
+          ? 'Double-clicking a folder or drive will open it in Tanjiro Flow.'
+          : 'Double-clicking a folder or drive will open it in File Explorer again.',
+      )
+    } catch (e) {
+      const err = asFlowError(e)
+      notify.error("Couldn't change the default file manager", err.message)
+    } finally {
+      setDefaultManagerBusy(false)
+    }
+  }
 
   const saveTheme = async () => {
     const name = await dialogs.prompt({
@@ -519,6 +552,26 @@ export function SettingsPage() {
           <Field label="Folders first" help="List folders before files when sorting.">
             <Switch checked={s.foldersFirst} onChange={(v) => s.set('foldersFirst', v)} label="Folders first" />
           </Field>
+        </SectionCard>
+      )}
+
+      {tab === 'behavior' && defaultManager !== null && (
+        <SectionCard title="Default app">
+          <Field
+            label="Default file manager"
+            help={
+              defaultManager
+                ? 'Folders and drives open in Tanjiro Flow. Turn this off to hand them back to File Explorer.'
+                : 'Open folders and drives (double-click, "This PC", etc.) in Tanjiro Flow instead of File Explorer. Applies to your Windows account only — no admin needed, and it\'s reversible any time.'
+            }
+          >
+            <Switch
+              checked={defaultManager}
+              onChange={toggleDefaultManager}
+              label="Default file manager"
+            />
+          </Field>
+          {defaultManagerBusy && <div className="field-help">Updating…</div>}
         </SectionCard>
       )}
 

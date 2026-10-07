@@ -29,7 +29,7 @@ import { useNav } from "./stores/navigation";
 import { useSelection } from "./stores/selection";
 import { useFileActions } from "./hooks/useFileActions";
 import { useHotkeys, type HotkeyMap } from "./hooks/useHotkeys";
-import { assetUrl } from "./lib/ipc";
+import { api, assetUrl } from "./lib/ipc";
 import type { FileEntry } from "./lib/types";
 
 function FilesView({ onShare }: { onShare: (entries: FileEntry[]) => void }) {
@@ -138,6 +138,19 @@ export default function App() {
     });
 
     useSharing.getState().init();
+
+    // If Windows launched us with a folder/drive path (we're set as the
+    // default file manager and the user double-clicked one), jump straight
+    // there instead of opening on Home.
+    api
+      .startupPath()
+      .then((path) => {
+        if (path) useNav.getState().go(path);
+      })
+      .catch(() => {
+        // No startup path, or the platform doesn't support this — Home is
+        // the right fallback either way.
+      });
 
     // Keep the cover up for a minimum duration so it never flashes, then
     // fade it out once init has had a chance to run.

@@ -1,5 +1,6 @@
 use crate::archives;
 use crate::converter::{self, ConvertOutcome};
+use crate::default_manager;
 use crate::drives::{self, DriveInfo};
 use crate::error::{FlowError, FlowResult};
 use crate::filesystem::{self, ConflictPolicy, DirListing, FileEntry, FolderStats, OpOutcome};
@@ -11,6 +12,7 @@ use crate::sharing::transfer;
 use crate::sharing::{DeviceIdentity, ReceivedItem, SharingState};
 use crate::shell;
 use serde::Serialize;
+use crate::StartupPath;
 use tauri::{AppHandle, State};
 
 /// Filesystem work is blocking. Running it on the async runtime directly would
@@ -236,6 +238,29 @@ pub async fn app_info() -> FlowResult<AppInfo> {
             .or_else(|_| std::env::var("HOSTNAME"))
             .unwrap_or_else(|_| "This PC".into()),
     })
+}
+
+
+// ---------------------------------------------------------------------------
+// Default file manager
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn default_manager_status() -> FlowResult<bool> {
+    blocking(default_manager::is_default_file_manager).await
+}
+
+#[tauri::command]
+pub async fn default_manager_set(enable: bool) -> FlowResult<()> {
+    blocking(move || default_manager::set_default_file_manager(enable)).await
+}
+
+/// The folder Windows launched us with (set as default file manager, then a
+/// folder or drive was double-clicked). Returned once per app run, then
+/// cleared, so a second call — or a second window — never re-navigates.
+#[tauri::command]
+pub async fn startup_path(state: State<'_, StartupPath>) -> FlowResult<Option<String>> {
+    Ok(state.0.lock().unwrap().take())
 }
 
 

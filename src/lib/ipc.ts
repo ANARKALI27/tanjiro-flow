@@ -97,6 +97,11 @@ export const api = {
   fileIcon: (path: string) => call<string>('fs_file_icon', { path }),
   appInfo: () => call<AppInfo>('app_info'),
 
+  // --- default file manager ---
+  defaultManagerStatus: () => call<boolean>('default_manager_status'),
+  defaultManagerSet: (enable: boolean) => call<void>('default_manager_set', { enable }),
+  startupPath: () => call<string | null>('startup_path'),
+
   // --- nearby devices + sharing ---
   deviceSelfInfo: () => call<DeviceIdentity>('devices_self_info'),
   deviceSetName: (name: string) => call<DeviceIdentity>('devices_set_name', { name }),

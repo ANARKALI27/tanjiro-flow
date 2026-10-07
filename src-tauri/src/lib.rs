@@ -1,6 +1,7 @@
 pub mod archives;
 pub mod commands;
 pub mod converter;
+pub mod default_manager;
 pub mod drives;
 pub mod error;
 pub mod filesystem;
@@ -11,7 +12,13 @@ pub mod shell;
 pub mod sharing;
 
 use sharing::SharingState;
+use std::sync::Mutex;
 use tauri::Manager;
+
+/// A folder path the OS launched us with (double-clicking a folder/drive
+/// once Tanjiro Flow is set as the default handler). Read once by the
+/// frontend on startup via `commands::startup_path`, then cleared.
+pub struct StartupPath(pub Mutex<Option<String>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,6 +26,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(SharingState::new())
+        .manage(StartupPath(Mutex::new(startup_path_from_args())))
         .setup(|app| {
             let handle = app.handle().clone();
             let state = app.state::<SharingState>();
@@ -58,7 +66,23 @@ pub fn run() {
             commands::shared_open_folder,
             commands::converter_supported_targets,
             commands::converter_convert,
+            commands::default_manager_status,
+            commands::default_manager_set,
+            commands::startup_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tanjiro Flow");
+}
+
+/// The first command-line argument, if it names a folder or drive that
+/// exists — this is how Windows launches us when we're set as the default
+/// file manager (`"Tanjiro Flow.exe" "C:\\path\\to\\folder"`).
+fn startup_path_from_args() -> Option<String> {
+    let arg = std::env::args().nth(1)?;
+    let path = std::path::Path::new(&arg);
+    if path.is_dir() {
+        Some(arg)
+    } else {
+        None
+    }
 }

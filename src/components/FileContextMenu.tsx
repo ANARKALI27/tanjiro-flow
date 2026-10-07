@@ -46,6 +46,7 @@ export function buildFileMenu(
   items.push(
     { id: 'copy', label: 'Copy', icon: 'copy', hint: 'Ctrl+C', onSelect: () => actions.copy(entries) },
     { id: 'cut', label: 'Cut', icon: 'scissors', hint: 'Ctrl+X', onSelect: () => actions.cut(entries) },
+    { id: 'copy-path', label: 'Copy as path', icon: 'clipboard', onSelect: () => actions.copyPath(entries) },
   );
 
   if (extra.canPaste) {

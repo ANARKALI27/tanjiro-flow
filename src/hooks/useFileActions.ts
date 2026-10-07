@@ -95,6 +95,17 @@ export function useFileActions(pane: 0 | 1 = 0) {
     }
   }, [])
 
+  const copyPath = useCallback(async (entries: FileEntry[]) => {
+    if (!entries.length) return
+    const text = entries.map((e) => e.path).join('\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      notify.success(entries.length === 1 ? 'Path copied' : `${entries.length} paths copied`)
+    } catch (e) {
+      reportError(e, 'Couldn’t copy the path')
+    }
+  }, [])
+
   const newFolder = useCallback(async () => {
     if (!currentPath) return
     const name = await dialogs.prompt({
@@ -343,6 +354,7 @@ export function useFileActions(pane: 0 | 1 = 0) {
       open,
       openWith,
       reveal,
+      copyPath,
       newFolder,
       newFile,
       rename,
@@ -360,6 +372,7 @@ export function useFileActions(pane: 0 | 1 = 0) {
       open,
       openWith,
       reveal,
+      copyPath,
       newFolder,
       newFile,
       rename,

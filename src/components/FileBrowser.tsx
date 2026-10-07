@@ -14,6 +14,7 @@ import { Toolbar } from './Toolbar'
 import { buildFileMenu } from './FileContextMenu'
 import { Empty, Spinner } from './Primitives'
 import { notify } from '../stores/notifications'
+import { runTransfer } from '../lib/transfer'
 import type { FileEntry } from '../lib/types'
 
 interface CtxState {
@@ -346,10 +347,9 @@ export function FileBrowser({
             if (internal) {
               const paths: string[] = JSON.parse(internal)
               if (paths.includes(entry.path)) return
-              const { api } = await import('../lib/ipc')
               try {
-                if (evt.ctrlKey) await api.copy(paths, entry.path, 'rename')
-                else await api.move(paths, entry.path, 'rename')
+                if (evt.ctrlKey) await runTransfer('copy', paths, entry.path)
+                else await runTransfer('move', paths, entry.path)
                 reload()
               } catch (e) {
                 notify.error('Couldn’t complete the drop', (e as { message?: string })?.message)
@@ -360,9 +360,8 @@ export function FileBrowser({
             const files = Array.from(evt.dataTransfer.files) as (File & { path?: string })[]
             const paths = files.map((f) => f.path).filter(Boolean) as string[]
             if (paths.length) {
-              const { api } = await import('../lib/ipc')
               try {
-                await api.copy(paths, entry.path, 'rename')
+                await runTransfer('copy', paths, entry.path)
                 reload()
               } catch (e) {
                 notify.error('Couldn’t copy dropped files', (e as { message?: string })?.message)
@@ -395,7 +394,6 @@ export function FileBrowser({
       evt.preventDefault()
       setDragOver(false)
       if (!path) return
-      const { api } = await import('../lib/ipc')
 
       const internal = evt.dataTransfer.getData('application/x-tanjiro-flow-paths')
       if (internal) {
@@ -406,11 +404,10 @@ export function FileBrowser({
           return
         }
         try {
-          if (evt.ctrlKey) await api.copy(paths, path, 'rename')
-          else await api.move(paths, path, 'rename')
+          const outcome = evt.ctrlKey ? await runTransfer('copy', paths, path) : await runTransfer('move', paths, path)
           reload()
           notify.success(
-            `${evt.ctrlKey ? 'Copied' : 'Moved'} ${paths.length === 1 ? '1 item' : `${paths.length} items`}`,
+            `${evt.ctrlKey ? 'Copied' : 'Moved'} ${outcome.succeeded.length === 1 ? '1 item' : `${outcome.succeeded.length} items`}`,
           )
         } catch (e) {
           notify.error('Couldn’t complete the drop', (e as { message?: string })?.message)
@@ -423,9 +420,9 @@ export function FileBrowser({
       const paths = files.map((f) => f.path).filter(Boolean) as string[]
       if (!paths.length) return
       try {
-        await api.copy(paths, path, 'rename')
+        const outcome = await runTransfer('copy', paths, path)
         reload()
-        notify.success(`Copied ${paths.length === 1 ? '1 item' : `${paths.length} items`}`)
+        notify.success(`Copied ${outcome.succeeded.length === 1 ? '1 item' : `${outcome.succeeded.length} items`}`)
       } catch (e) {
         notify.error('Couldn’t copy dropped files', (e as { message?: string })?.message)
       }

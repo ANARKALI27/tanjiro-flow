@@ -10,6 +10,18 @@ export function formatBytes(bytes: number, precision?: number): string {
   return `${value.toFixed(digits)} ${UNITS[i]}`
 }
 
+/** 134 -> "2m 14s". For a live transfer's ETA readout. */
+export function formatDuration(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds))
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  const rem = s % 60
+  if (m < 60) return `${m}m ${rem}s`
+  const h = Math.floor(m / 60)
+  const remM = m % 60
+  return `${h}h ${remM}m`
+}
+
 export function formatDate(ms: number | null): string {
   if (!ms) return '—'
   const d = new Date(ms)

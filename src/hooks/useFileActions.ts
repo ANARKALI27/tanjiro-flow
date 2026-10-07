@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { api } from '../lib/ipc'
 import { basename, joinPath, parentOf, pluralize, splitName } from '../lib/format'
+import { runTransfer } from '../lib/transfer'
 import type { FileEntry, FlowError, OpOutcome } from '../lib/types'
 import { dialogs } from '../stores/dialogs'
 import { notify, useNotifications } from '../stores/notifications'
@@ -238,25 +239,15 @@ export function useFileActions(pane: 0 | 1 = 0) {
       return
     }
 
-    const id = push({
-      tone: 'progress',
-      title: mode === 'copy' ? 'Copying…' : 'Moving…',
-      body: pluralize(paths.length, 'item'),
-    })
     try {
-      const outcome =
-        mode === 'copy'
-          ? await api.copy(paths, currentPath, 'rename')
-          : await api.move(paths, currentPath, 'rename')
-      dismiss(id)
+      const outcome = await runTransfer(mode === 'copy' ? 'copy' : 'move', paths, currentPath)
       if (mode === 'cut') clipboard.clear()
       nav.reload()
       reportOutcome(mode === 'copy' ? 'Copied' : 'Moved', outcome)
     } catch (e) {
-      dismiss(id)
       reportError(e, mode === 'copy' ? 'Couldn’t copy' : 'Couldn’t move')
     }
-  }, [clipboard, currentPath, nav, push, dismiss])
+  }, [clipboard, currentPath, nav])
 
   const compress = useCallback(
     async (entries: FileEntry[]) => {

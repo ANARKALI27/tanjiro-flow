@@ -80,20 +80,24 @@ pub async fn fs_delete(paths: Vec<String>, permanent: bool) -> FlowResult<OpOutc
 
 #[tauri::command]
 pub async fn fs_copy(
+    app: AppHandle,
     sources: Vec<String>,
     dest_dir: String,
     policy: ConflictPolicy,
+    op_id: String,
 ) -> FlowResult<OpOutcome> {
-    blocking(move || filesystem::copy_items(&sources, &dest_dir, policy)).await
+    blocking(move || filesystem::copy_items(&sources, &dest_dir, policy, &app, &op_id)).await
 }
 
 #[tauri::command]
 pub async fn fs_move(
+    app: AppHandle,
     sources: Vec<String>,
     dest_dir: String,
     policy: ConflictPolicy,
+    op_id: String,
 ) -> FlowResult<OpOutcome> {
-    blocking(move || filesystem::move_items(&sources, &dest_dir, policy)).await
+    blocking(move || filesystem::move_items(&sources, &dest_dir, policy, &app, &op_id)).await
 }
 
 // ---------------------------------------------------------------------------

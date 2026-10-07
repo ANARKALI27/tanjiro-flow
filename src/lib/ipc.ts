@@ -66,10 +66,10 @@ export const api = {
     call<FileEntry>('fs_rename', { path, newName }),
   remove: (paths: string[], permanent: boolean) =>
     call<OpOutcome>('fs_delete', { paths, permanent }),
-  copy: (sources: string[], destDir: string, policy: ConflictPolicy) =>
-    call<OpOutcome>('fs_copy', { sources, destDir, policy }),
-  move: (sources: string[], destDir: string, policy: ConflictPolicy) =>
-    call<OpOutcome>('fs_move', { sources, destDir, policy }),
+  copy: (sources: string[], destDir: string, policy: ConflictPolicy, opId: string) =>
+    call<OpOutcome>('fs_copy', { sources, destDir, policy, opId }),
+  move: (sources: string[], destDir: string, policy: ConflictPolicy, opId: string) =>
+    call<OpOutcome>('fs_move', { sources, destDir, policy, opId }),
 
   // --- places / drives ---
   places: () => call<Place[]>('fs_places'),

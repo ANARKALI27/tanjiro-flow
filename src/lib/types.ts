@@ -182,6 +182,16 @@ export interface ShareCompleteEvent {
   direction: 'send' | 'receive'
 }
 
+export interface CopyProgressEvent {
+  opId: string
+  destDir: string
+  currentFile: string
+  filesDone: number
+  filesTotal: number
+  bytesDone: number
+  bytesTotal: number
+}
+
 export interface ReceivedItem {
   name: string
   path: string

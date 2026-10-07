@@ -1,8 +1,10 @@
 use crate::error::{FlowError, FlowResult};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use tauri::{AppHandle, Emitter};
 
 #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
@@ -315,7 +317,142 @@ fn resolve_destination(dest: &Path, policy: ConflictPolicy) -> FlowResult<Option
     }
 }
 
-fn copy_dir_recursive(src: &Path, dest: &Path, policy: ConflictPolicy) -> FlowResult<()> {
+/// Emitted to the frontend while a copy or move is in flight so the UI can
+/// show live bytes/speed/ETA and nudge the destination folder to refresh.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopyProgressEvent {
+    pub op_id: String,
+    pub dest_dir: String,
+    pub current_file: String,
+    pub files_done: usize,
+    pub files_total: usize,
+    pub bytes_done: u64,
+    pub bytes_total: u64,
+}
+
+const COPY_CHUNK: usize = 1024 * 1024;
+/// Don't flood the frontend with an event per 1 MiB chunk on a fast SSD —
+/// a tick every ~100ms is plenty smooth for a progress bar.
+const EMIT_INTERVAL_MS: u128 = 100;
+
+struct CopyProgress<'a> {
+    app: &'a AppHandle,
+    op_id: &'a str,
+    dest_dir: &'a str,
+    bytes_done: u64,
+    bytes_total: u64,
+    files_done: usize,
+    files_total: usize,
+    last_emit: Instant,
+}
+
+impl<'a> CopyProgress<'a> {
+    fn maybe_emit(&mut self, current_file: &str, force: bool) {
+        if !force && self.last_emit.elapsed().as_millis() < EMIT_INTERVAL_MS {
+            return;
+        }
+        self.last_emit = Instant::now();
+        let _ = self.app.emit(
+            "fs://copy-progress",
+            CopyProgressEvent {
+                op_id: self.op_id.to_string(),
+                dest_dir: self.dest_dir.to_string(),
+                current_file: current_file.to_string(),
+                files_done: self.files_done,
+                files_total: self.files_total,
+                bytes_done: self.bytes_done,
+                bytes_total: self.bytes_total,
+            },
+        );
+    }
+}
+
+/// Recursive byte/file count for a single source, used to size the progress
+/// bar before the transfer starts (mirrors `folder_stats` but unbounded,
+/// since this already runs on the blocking pool for a transfer the user is
+/// about to wait on anyway).
+fn size_of_path(p: &Path) -> (u64, usize) {
+    if p.is_dir() {
+        let mut bytes = 0u64;
+        let mut files = 0usize;
+        for entry in walkdir::WalkDir::new(p)
+            .follow_links(false)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            if entry.file_type().is_file() {
+                if let Ok(m) = entry.metadata() {
+                    bytes += m.len();
+                    files += 1;
+                }
+            }
+        }
+        (bytes, files)
+    } else if let Ok(m) = fs::metadata(p) {
+        (m.len(), 1)
+    } else {
+        (0, 0)
+    }
+}
+
+/// Per-source sizes (so an instant same-volume rename can credit the
+/// progress bar for its exact share) plus the running totals.
+fn source_sizes(sources: &[String]) -> (Vec<(u64, usize)>, u64, usize) {
+    let mut per_source = Vec::with_capacity(sources.len());
+    let mut bytes_total = 0u64;
+    let mut files_total = 0usize;
+    for src in sources {
+        let (b, f) = size_of_path(Path::new(src));
+        per_source.push((b, f));
+        bytes_total += b;
+        files_total += f;
+    }
+    (per_source, bytes_total, files_total)
+}
+
+/// Streams one file in chunks (rather than `fs::copy`'s single syscall) so we
+/// can report bytes as they land. Best-effort carries over permission bits,
+/// matching what `fs::copy` would have done.
+fn copy_file_with_progress(
+    from: &Path,
+    to: &Path,
+    progress: &mut CopyProgress,
+) -> FlowResult<()> {
+    let mut reader = fs::File::open(from).map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
+    let mut writer = fs::File::create(to).map_err(|e| FlowError::from_io(&e, &to.to_string_lossy()))?;
+    let name = from
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let mut buf = vec![0u8; COPY_CHUNK];
+    loop {
+        let n = reader
+            .read(&mut buf)
+            .map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
+        if n == 0 {
+            break;
+        }
+        writer
+            .write_all(&buf[..n])
+            .map_err(|e| FlowError::from_io(&e, &to.to_string_lossy()))?;
+        progress.bytes_done += n as u64;
+        progress.maybe_emit(&name, false);
+    }
+    if let Ok(meta) = fs::metadata(from) {
+        let _ = fs::set_permissions(to, meta.permissions());
+    }
+    progress.files_done += 1;
+    progress.maybe_emit(&name, true);
+    Ok(())
+}
+
+fn copy_dir_recursive(
+    src: &Path,
+    dest: &Path,
+    policy: ConflictPolicy,
+    progress: &mut CopyProgress,
+) -> FlowResult<()> {
     fs::create_dir_all(dest).map_err(|e| FlowError::from_io(&e, &dest.to_string_lossy()))?;
     let rd = fs::read_dir(src).map_err(|e| FlowError::from_io(&e, &src.to_string_lossy()))?;
     for item in rd.flatten() {
@@ -323,10 +460,9 @@ fn copy_dir_recursive(src: &Path, dest: &Path, policy: ConflictPolicy) -> FlowRe
         let to = dest.join(item.file_name());
         let is_dir = item.file_type().map(|t| t.is_dir()).unwrap_or(false);
         if is_dir {
-            copy_dir_recursive(&from, &to, policy)?;
+            copy_dir_recursive(&from, &to, policy, progress)?;
         } else if let Some(target) = resolve_destination(&to, policy)? {
-            fs::copy(&from, &target)
-                .map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
+            copy_file_with_progress(&from, &target, progress)?;
         }
     }
     Ok(())
@@ -336,6 +472,8 @@ pub fn copy_items(
     sources: &[String],
     dest_dir: &str,
     policy: ConflictPolicy,
+    app: &AppHandle,
+    op_id: &str,
 ) -> FlowResult<OpOutcome> {
     let dest_root = PathBuf::from(dest_dir);
     if !dest_root.is_dir() {
@@ -343,6 +481,20 @@ pub fn copy_items(
             "The destination folder \"{dest_dir}\" does not exist."
         )));
     }
+
+    let (_, bytes_total, files_total) = source_sizes(sources);
+    let mut progress = CopyProgress {
+        app,
+        op_id,
+        dest_dir,
+        bytes_done: 0,
+        bytes_total,
+        files_done: 0,
+        files_total,
+        last_emit: Instant::now() - std::time::Duration::from_secs(1),
+    };
+    progress.maybe_emit("", true);
+
     let mut outcome = OpOutcome::default();
     for src in sources {
         let from = PathBuf::from(src);
@@ -370,15 +522,14 @@ pub fn copy_items(
                     Some(t) => t,
                     None => return Ok(None),
                 };
-                copy_dir_recursive(&from, &target, policy)?;
+                copy_dir_recursive(&from, &target, policy, &mut progress)?;
                 Ok(Some(target))
             } else {
                 let target = match resolve_destination(&to, policy)? {
                     Some(t) => t,
                     None => return Ok(None),
                 };
-                fs::copy(&from, &target)
-                    .map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
+                copy_file_with_progress(&from, &target, &mut progress)?;
                 Ok(Some(target))
             }
         })();
@@ -388,6 +539,7 @@ pub fn copy_items(
             Err(e) => outcome.failed.push((src.clone(), e.to_string())),
         }
     }
+    progress.maybe_emit("", true);
     Ok(outcome)
 }
 
@@ -395,6 +547,8 @@ pub fn move_items(
     sources: &[String],
     dest_dir: &str,
     policy: ConflictPolicy,
+    app: &AppHandle,
+    op_id: &str,
 ) -> FlowResult<OpOutcome> {
     let dest_root = PathBuf::from(dest_dir);
     if !dest_root.is_dir() {
@@ -402,8 +556,22 @@ pub fn move_items(
             "The destination folder \"{dest_dir}\" does not exist."
         )));
     }
+
+    let (per_source, bytes_total, files_total) = source_sizes(sources);
+    let mut progress = CopyProgress {
+        app,
+        op_id,
+        dest_dir,
+        bytes_done: 0,
+        bytes_total,
+        files_done: 0,
+        files_total,
+        last_emit: Instant::now() - std::time::Duration::from_secs(1),
+    };
+    progress.maybe_emit("", true);
+
     let mut outcome = OpOutcome::default();
-    for src in sources {
+    for (i, src) in sources.iter().enumerate() {
         let from = PathBuf::from(src);
         let name = match from.file_name() {
             Some(n) => n.to_os_string(),
@@ -422,6 +590,7 @@ pub fn move_items(
             continue;
         }
         let to = dest_root.join(&name);
+        let (item_bytes, item_files) = per_source.get(i).copied().unwrap_or((0, 0));
         let result = (|| -> FlowResult<Option<PathBuf>> {
             let target = match resolve_destination(&to, policy)? {
                 Some(t) => t,
@@ -430,15 +599,21 @@ pub fn move_items(
             // rename() is instant on the same volume and fails across volumes,
             // where we fall back to copy-then-delete.
             match fs::rename(&from, &target) {
-                Ok(_) => Ok(Some(target)),
+                Ok(_) => {
+                    // Instant, but still credit this item's exact share of the
+                    // total so the bar and ETA stay honest for mixed batches.
+                    progress.bytes_done += item_bytes;
+                    progress.files_done += item_files;
+                    progress.maybe_emit(&name.to_string_lossy(), false);
+                    Ok(Some(target))
+                }
                 Err(_) => {
                     if from.is_dir() {
-                        copy_dir_recursive(&from, &target, policy)?;
+                        copy_dir_recursive(&from, &target, policy, &mut progress)?;
                         fs::remove_dir_all(&from)
                             .map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
                     } else {
-                        fs::copy(&from, &target)
-                            .map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
+                        copy_file_with_progress(&from, &target, &mut progress)?;
                         fs::remove_file(&from)
                             .map_err(|e| FlowError::from_io(&e, &from.to_string_lossy()))?;
                     }
@@ -452,6 +627,7 @@ pub fn move_items(
             Err(e) => outcome.failed.push((src.clone(), e.to_string())),
         }
     }
+    progress.maybe_emit("", true);
     Ok(outcome)
 }
 

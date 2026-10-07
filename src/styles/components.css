@@ -1421,6 +1421,7 @@
   color: var(--text-dim);
   margin-top: 2px;
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 .toast-actions {
   display: flex;

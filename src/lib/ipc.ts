@@ -103,6 +103,8 @@ export const api = {
   /** `combo` uses Tauri accelerator syntax, e.g. "ctrl+shift+e". */
   globalShortcutSet: (enabled: boolean, combo: string) =>
     call<void>('global_shortcut_set', { enabled, combo }),
+  minimizeToTraySet: (enabled: boolean) => call<void>('minimize_to_tray_set', { enabled }),
+  appQuit: () => call<void>('app_quit'),
   startupPath: () => call<string | null>('startup_path'),
 
   // --- nearby devices + sharing ---

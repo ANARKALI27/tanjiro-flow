@@ -100,6 +100,10 @@ export interface SettingsState {
   globalShortcutEnabled: boolean
   /** Tauri accelerator syntax, e.g. "ctrl+shift+e". */
   globalShortcutKeys: string
+  /** When true, closing the main window hides it to the system tray
+   *  instead of quitting — needed for the global shortcut to bring
+   *  Tanjiro Flow back after the window is "closed". On by default. */
+  minimizeToTray: boolean
 
   set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void
   toggleSection: (key: SectionKey) => void
@@ -177,6 +181,7 @@ export const useSettings = create<SettingsState>()(
       starred: [],
       globalShortcutEnabled: true,
       globalShortcutKeys: 'ctrl+shift+e',
+      minimizeToTray: true,
 
       set: (key, value) => set({ [key]: value } as Partial<SettingsState>),
 
@@ -260,6 +265,7 @@ export const useSettings = create<SettingsState>()(
         starred: s.starred,
         globalShortcutEnabled: s.globalShortcutEnabled,
         globalShortcutKeys: s.globalShortcutKeys,
+        minimizeToTray: s.minimizeToTray,
       }),
     },
   ),

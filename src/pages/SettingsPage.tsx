@@ -644,6 +644,27 @@ export function SettingsPage() {
               <ShortcutCapture value={s.globalShortcutKeys} onChange={(combo) => s.set('globalShortcutKeys', combo)} />
             </Field>
           )}
+          <Field
+            label="Keep running in the background"
+            help={
+              s.globalShortcutEnabled
+                ? 'Closing the window hides Tanjiro Flow to the system tray instead of quitting, so the global shortcut can still bring it back. Turn this off and the shortcut will only work while the window is already open.'
+                : 'Closing the window hides Tanjiro Flow to the system tray instead of quitting.'
+            }
+          >
+            <Switch
+              checked={s.minimizeToTray}
+              onChange={(v) => s.set('minimizeToTray', v)}
+              label="Keep running in the background"
+            />
+          </Field>
+          {s.minimizeToTray && (
+            <Field label="Fully quit" help="Closes Tanjiro Flow completely, including the tray icon.">
+              <button className="btn btn-sm btn-ghost" onClick={() => api.appQuit().catch(() => {})}>
+                Quit Tanjiro Flow
+              </button>
+            </Field>
+          )}
         </SectionCard>
       )}
 

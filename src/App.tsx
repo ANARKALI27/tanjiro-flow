@@ -163,6 +163,17 @@ export default function App() {
       })
     })
 
+    // Same reconciliation for "minimize to tray on close" — the Rust
+    // side defaults to true (matching the store's default) so the very
+    // first close still behaves correctly even before this runs.
+    api.minimizeToTraySet(state.minimizeToTray).catch(() => {})
+    const unsubscribeTray = useSettings.subscribe((s, prev) => {
+      if (s.minimizeToTray === prev.minimizeToTray) return
+      api.minimizeToTraySet(s.minimizeToTray).catch((e) => {
+        notify.error("Couldn't update close behavior", asFlowError(e).message)
+      })
+    })
+
     // If Windows launched us with a folder/drive path (we're set as the
     // default file manager and the user double-clicked one), jump straight
     // there instead of opening on Home.
@@ -183,6 +194,7 @@ export default function App() {
     return () => {
       unsubscribe();
       unsubscribeShortcut();
+      unsubscribeTray();
       window.clearTimeout(timer);
     };
   }, []);

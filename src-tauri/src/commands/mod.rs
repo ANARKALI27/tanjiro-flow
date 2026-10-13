@@ -296,6 +296,27 @@ pub async fn global_shortcut_set(app: AppHandle, enabled: bool, combo: String) -
     Ok(())
 }
 
+/// Whether closing the main window hides it to the tray (so the app, and
+/// the global shortcut listening for it, keep running) or actually quits.
+/// Stored as a plain atomic (`crate::MINIMIZE_TO_TRAY`) rather than in any
+/// app state, since the window-close handler needs to read it from a
+/// context that doesn't have easy access to Tauri's managed state.
+#[tauri::command]
+pub async fn minimize_to_tray_set(enabled: bool) -> FlowResult<()> {
+    crate::MINIMIZE_TO_TRAY.store(enabled, std::sync::atomic::Ordering::Relaxed);
+    Ok(())
+}
+
+/// Actually exits the app, bypassing the close-to-tray behavior — what
+/// the tray menu's "Quit" uses, and what Settings uses for a "Quit
+/// Tanjiro Flow" action so there's always a way out even when closing
+/// the window only hides it.
+#[tauri::command]
+pub async fn app_quit(app: AppHandle) -> FlowResult<()> {
+    app.exit(0);
+    Ok(())
+}
+
 
 // ---------------------------------------------------------------------------
 // Nearby Devices + Sharing

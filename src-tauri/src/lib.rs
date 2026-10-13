@@ -12,14 +12,27 @@ pub mod shell;
 pub mod sharing;
 
 use sharing::SharingState;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 /// Default global shortcut that brings Tanjiro Flow to the front from
 /// anywhere in Windows, the way Win+E does for File Explorer. Shown as
 /// the default in Settings too, and kept in sync with it there.
 pub const DEFAULT_GLOBAL_SHORTCUT: &str = "ctrl+shift+e";
+
+/// Whether closing the main window should hide it to the tray instead of
+/// quitting the app. Settings syncs this from its own persisted value on
+/// startup and on every change (see `commands::minimize_to_tray_set`), so
+/// the window-close handler — which runs on the main thread without easy
+/// access to the frontend's store — always has an up-to-date answer.
+/// Defaults to true: the whole point of the global shortcut is that it
+/// can bring Tanjiro Flow back after the window is "closed", which only
+/// works if closing kept the process (and its tray icon) alive.
+pub static MINIMIZE_TO_TRAY: AtomicBool = AtomicBool::new(true);
 
 /// A folder path the OS launched us with (double-clicking a folder/drive
 /// once Tanjiro Flow is set as the default handler). Read once by the
@@ -62,7 +75,49 @@ pub fn run() {
                 let _ = app.global_shortcut().register(shortcut);
             }
 
+            // Tray icon: lets Tanjiro Flow keep running (and keep
+            // listening for the global shortcut) after the window is
+            // "closed", the same way most tray-resident Windows apps
+            // work. Left-clicking the icon brings the window back;
+            // right-clicking opens a small menu with a real Quit, since
+            // otherwise there would be no way to fully exit once the
+            // window itself no longer offers it.
+            let open_item = MenuItem::with_id(app, "open", "Open Tanjiro Flow", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let tray_menu = Menu::with_items(app, &[&open_item, &quit_item])?;
+
+            TrayIconBuilder::with_id("main")
+                .icon(app.default_window_icon().cloned().expect("app icon"))
+                .tooltip("Tanjiro Flow")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "open" => show_and_focus_main_window(app),
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
+                        show_and_focus_main_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Closing the window hides it to the tray instead of quitting,
+            // as long as the user hasn't turned that off in Settings — the
+            // tray icon (and the process behind it) is what lets the
+            // global shortcut bring Tanjiro Flow back after a "close".
+            if window.label() == "main" {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    if MINIMIZE_TO_TRAY.load(Ordering::Relaxed) {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::fs_list_dir,
@@ -101,6 +156,8 @@ pub fn run() {
             commands::default_manager_set,
             commands::startup_path,
             commands::global_shortcut_set,
+            commands::minimize_to_tray_set,
+            commands::app_quit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tanjiro Flow");

@@ -16,7 +16,7 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/api": "^2.12.2",
     "framer-motion": "^12.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

@@ -174,6 +174,37 @@ export function SettingsPage() {
       .catch(() => setDefaultManagerState(null))
   }, [])
 
+  // Launch at Windows startup — also live OS state (a registry entry), not
+  // a persisted setting, for the same reason as defaultManager above.
+  const [autostart, setAutostartState] = useState<boolean | null>(null)
+  const [autostartBusy, setAutostartBusy] = useState(false)
+
+  useEffect(() => {
+    api
+      .autostartStatus()
+      .then(setAutostartState)
+      .catch(() => setAutostartState(null))
+  }, [])
+
+  const toggleAutostart = async (enable: boolean) => {
+    setAutostartBusy(true)
+    try {
+      await api.autostartSet(enable)
+      setAutostartState(enable)
+      notify.success(
+        enable ? 'Tanjiro Flow will launch at startup' : 'Tanjiro Flow will no longer launch at startup',
+        enable
+          ? 'It will start minimized to the tray next time you sign in to Windows.'
+          : undefined,
+      )
+    } catch (e) {
+      const err = asFlowError(e)
+      notify.error("Couldn't change startup launch", err.message)
+    } finally {
+      setAutostartBusy(false)
+    }
+  }
+
   const toggleDefaultManager = async (enable: boolean) => {
     setDefaultManagerBusy(true)
     try {
@@ -665,6 +696,15 @@ export function SettingsPage() {
               </button>
             </Field>
           )}
+          {autostart !== null && (
+            <Field
+              label="Launch at startup"
+              help="Start Tanjiro Flow automatically (minimized to the tray) when you sign in to Windows."
+            >
+              <Switch checked={autostart} onChange={toggleAutostart} label="Launch at startup" />
+            </Field>
+          )}
+          {autostartBusy && <div className="field-help">Updating…</div>}
         </SectionCard>
       )}
 

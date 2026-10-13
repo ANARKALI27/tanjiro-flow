@@ -1,4 +1,5 @@
 pub mod archives;
+pub mod autostart;
 pub mod commands;
 pub mod converter;
 pub mod default_manager;
@@ -38,6 +39,14 @@ pub static MINIMIZE_TO_TRAY: AtomicBool = AtomicBool::new(true);
 /// once Tanjiro Flow is set as the default handler). Read once by the
 /// frontend on startup via `commands::startup_path`, then cleared.
 pub struct StartupPath(pub Mutex<Option<String>>);
+
+/// Whether we were launched with `--minimized` (set by the autostart
+/// registry entry — see `autostart/mod.rs`), meaning the main window
+/// should stay hidden in the tray instead of showing on startup the way
+/// a normal launch does.
+fn launched_minimized() -> bool {
+    std::env::args().any(|a| a == "--minimized")
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -85,6 +94,15 @@ pub fn run() {
             let open_item = MenuItem::with_id(app, "open", "Open Tanjiro Flow", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let tray_menu = Menu::with_items(app, &[&open_item, &quit_item])?;
+
+            // If Windows launched us from the autostart registry entry
+            // (see autostart/mod.rs), start hidden in the tray rather than
+            // popping the window in the user's face right after login.
+            if launched_minimized() {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
 
             TrayIconBuilder::with_id("main")
                 .icon(app.default_window_icon().cloned().expect("app icon"))
@@ -158,6 +176,8 @@ pub fn run() {
             commands::global_shortcut_set,
             commands::minimize_to_tray_set,
             commands::app_quit,
+            commands::autostart_status,
+            commands::autostart_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tanjiro Flow");

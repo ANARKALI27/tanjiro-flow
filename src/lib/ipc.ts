@@ -105,6 +105,8 @@ export const api = {
     call<void>('global_shortcut_set', { enabled, combo }),
   minimizeToTraySet: (enabled: boolean) => call<void>('minimize_to_tray_set', { enabled }),
   appQuit: () => call<void>('app_quit'),
+  autostartStatus: () => call<boolean>('autostart_status'),
+  autostartSet: (enable: boolean) => call<void>('autostart_set', { enable }),
   startupPath: () => call<string | null>('startup_path'),
 
   // --- nearby devices + sharing ---

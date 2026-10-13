@@ -317,6 +317,18 @@ pub async fn app_quit(app: AppHandle) -> FlowResult<()> {
     Ok(())
 }
 
+/// Whether Tanjiro Flow is currently registered to launch at Windows login
+/// (see `crate::autostart`).
+#[tauri::command]
+pub async fn autostart_status() -> FlowResult<bool> {
+    blocking(crate::autostart::is_autostart_enabled).await
+}
+
+#[tauri::command]
+pub async fn autostart_set(enable: bool) -> FlowResult<()> {
+    blocking(move || crate::autostart::set_autostart_enabled(enable)).await
+}
+
 
 // ---------------------------------------------------------------------------
 // Nearby Devices + Sharing

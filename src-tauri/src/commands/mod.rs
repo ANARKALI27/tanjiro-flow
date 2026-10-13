@@ -14,6 +14,7 @@ use crate::shell;
 use serde::Serialize;
 use crate::StartupPath;
 use tauri::{AppHandle, State};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 /// Filesystem work is blocking. Running it on the async runtime directly would
 /// stall the IPC thread and make the whole window janky, so every command that
@@ -265,6 +266,34 @@ pub async fn default_manager_set(enable: bool) -> FlowResult<()> {
 #[tauri::command]
 pub async fn startup_path(state: State<'_, StartupPath>) -> FlowResult<Option<String>> {
     Ok(state.0.lock().unwrap().take())
+}
+
+/// Replaces whichever global shortcut is currently registered to bring
+/// Tanjiro Flow to the front (the default `Ctrl+Shift+E`, or the user's
+/// own custom combo from Settings) with a new one, or unregisters it
+/// entirely when `enabled` is false. `combo` uses Tauri's accelerator
+/// syntax (e.g. `"ctrl+shift+e"`); the frontend is responsible for
+/// converting whatever it captured from the keyboard into that form.
+///
+/// We always unregister everything first — simplest way to guarantee we
+/// never end up with two shortcuts both pointing at this window, and
+/// harmless to call even when nothing is currently registered.
+#[tauri::command]
+pub async fn global_shortcut_set(app: AppHandle, enabled: bool, combo: String) -> FlowResult<()> {
+    let gs = app.global_shortcut();
+    gs.unregister_all()
+        .map_err(|e| FlowError::Other(format!("Couldn't update the global shortcut: {e}")))?;
+
+    if !enabled {
+        return Ok(());
+    }
+
+    let shortcut: Shortcut = combo
+        .parse()
+        .map_err(|_| FlowError::Other(format!("'{combo}' isn't a shortcut Tanjiro Flow can register.")))?;
+    gs.register(shortcut)
+        .map_err(|e| FlowError::Other(format!("Couldn't register that shortcut: {e}")))?;
+    Ok(())
 }
 
 

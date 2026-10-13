@@ -95,6 +95,12 @@ export interface SettingsState {
   foldersFirst: boolean
   starred: string[]
 
+  /** Whether the Ctrl+Shift+E-style global hotkey (works even when
+   *  Tanjiro Flow isn't focused) is active. On by default. */
+  globalShortcutEnabled: boolean
+  /** Tauri accelerator syntax, e.g. "ctrl+shift+e". */
+  globalShortcutKeys: string
+
   set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void
   toggleSection: (key: SectionKey) => void
   togglePanel: (key: keyof PanelToggles) => void
@@ -169,6 +175,8 @@ export const useSettings = create<SettingsState>()(
       sortDir: 'asc',
       foldersFirst: true,
       starred: [],
+      globalShortcutEnabled: true,
+      globalShortcutKeys: 'ctrl+shift+e',
 
       set: (key, value) => set({ [key]: value } as Partial<SettingsState>),
 
@@ -250,6 +258,8 @@ export const useSettings = create<SettingsState>()(
         sortDir: s.sortDir,
         foldersFirst: s.foldersFirst,
         starred: s.starred,
+        globalShortcutEnabled: s.globalShortcutEnabled,
+        globalShortcutKeys: s.globalShortcutKeys,
       }),
     },
   ),

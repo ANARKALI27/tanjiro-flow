@@ -14,6 +14,12 @@ pub mod sharing;
 use sharing::SharingState;
 use std::sync::Mutex;
 use tauri::Manager;
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+
+/// Default global shortcut that brings Tanjiro Flow to the front from
+/// anywhere in Windows, the way Win+E does for File Explorer. Shown as
+/// the default in Settings too, and kept in sync with it there.
+pub const DEFAULT_GLOBAL_SHORTCUT: &str = "ctrl+shift+e";
 
 /// A folder path the OS launched us with (double-clicking a folder/drive
 /// once Tanjiro Flow is set as the default handler). Read once by the
@@ -25,12 +31,37 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, _shortcut, event| {
+                    // Any registered shortcut currently just brings the main
+                    // window forward — that's the only thing this feature
+                    // does today, so we don't need to match on which one fired.
+                    if event.state() == ShortcutState::Pressed {
+                        show_and_focus_main_window(app);
+                    }
+                })
+                .build(),
+        )
         .manage(SharingState::new())
         .manage(StartupPath(Mutex::new(startup_path_from_args())))
         .setup(|app| {
             let handle = app.handle().clone();
             let state = app.state::<SharingState>();
             commands::start_sharing(handle, &state);
+
+            // Register the default shortcut on startup unless the user has
+            // disabled it or picked a different one — the frontend reads
+            // that choice from its own persisted settings and, when it
+            // differs from the default, immediately calls
+            // `commands::set_global_shortcut` to replace this registration.
+            // Registering a reasonable default here (rather than waiting on
+            // the frontend) means the shortcut works from the very first
+            // launch, before any JS has run.
+            if let Ok(shortcut) = DEFAULT_GLOBAL_SHORTCUT.parse::<Shortcut>() {
+                let _ = app.global_shortcut().register(shortcut);
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -69,6 +100,7 @@ pub fn run() {
             commands::default_manager_status,
             commands::default_manager_set,
             commands::startup_path,
+            commands::global_shortcut_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tanjiro Flow");
@@ -84,5 +116,15 @@ fn startup_path_from_args() -> Option<String> {
         Some(arg)
     } else {
         None
+    }
+}
+
+/// Un-minimize, show, and focus the main window — what every global
+/// shortcut registration does. We only ever have one window ("main").
+pub fn show_and_focus_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
     }
 }

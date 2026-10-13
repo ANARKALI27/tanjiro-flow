@@ -29,7 +29,8 @@ import { useNav } from "./stores/navigation";
 import { useSelection } from "./stores/selection";
 import { useFileActions } from "./hooks/useFileActions";
 import { useHotkeys, type HotkeyMap } from "./hooks/useHotkeys";
-import { api, assetUrl } from "./lib/ipc";
+import { api, asFlowError, assetUrl } from "./lib/ipc";
+import { notify } from "./stores/notifications";
 import type { FileEntry } from "./lib/types";
 
 function FilesView({ onShare }: { onShare: (entries: FileEntry[]) => void }) {
@@ -139,6 +140,29 @@ export default function App() {
 
     useSharing.getState().init();
 
+    // The Rust side already registers the Ctrl+Shift+E default the moment
+    // the app starts (before any JS runs), so the shortcut works from the
+    // very first frame. This call just reconciles that with whatever the
+    // user has actually persisted — a disabled shortcut or a custom combo
+    // from a previous session — and keeps it in sync on every change.
+    api
+      .globalShortcutSet(state.globalShortcutEnabled, state.globalShortcutKeys)
+      .catch(() => {
+        // Non-fatal: the default registered on the Rust side keeps working
+        // even if syncing a custom combo failed for some reason.
+      });
+    const unsubscribeShortcut = useSettings.subscribe((s, prev) => {
+      if (
+        s.globalShortcutEnabled === prev.globalShortcutEnabled &&
+        s.globalShortcutKeys === prev.globalShortcutKeys
+      ) {
+        return
+      }
+      api.globalShortcutSet(s.globalShortcutEnabled, s.globalShortcutKeys).catch((e) => {
+        notify.error("Couldn't update the global shortcut", asFlowError(e).message)
+      })
+    })
+
     // If Windows launched us with a folder/drive path (we're set as the
     // default file manager and the user double-clicked one), jump straight
     // there instead of opening on Home.
@@ -158,6 +182,7 @@ export default function App() {
 
     return () => {
       unsubscribe();
+      unsubscribeShortcut();
       window.clearTimeout(timer);
     };
   }, []);

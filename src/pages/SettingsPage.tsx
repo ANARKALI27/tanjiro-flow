@@ -73,6 +73,78 @@ const GRADIENT_PRESETS = [
   'linear-gradient(160deg, rgba(255,107,107,0.28), rgba(255,182,72,0.2))',
 ]
 
+const SHORTCUT_KEY_LABELS: Record<string, string> = {
+  control: 'Ctrl',
+  meta: 'Ctrl',
+  shift: 'Shift',
+  alt: 'Alt',
+  ' ': 'Space',
+  escape: 'Esc',
+}
+
+/** "ctrl+shift+e" -> "Ctrl + Shift + E", for display only. */
+function formatShortcut(combo: string): string {
+  return combo
+    .split('+')
+    .map((part) => SHORTCUT_KEY_LABELS[part] ?? (part.length === 1 ? part.toUpperCase() : part))
+    .join(' + ')
+}
+
+/**
+ * Turns a keydown into Tauri's accelerator syntax ("ctrl+shift+e"), or
+ * null while only modifier keys are held so far. Requires at least one
+ * modifier, since an unmodified global hotkey would steal every normal
+ * keystroke from every other app on the system.
+ */
+function comboFromCapture(e: KeyboardEvent | React.KeyboardEvent): string | null {
+  const key = e.key.toLowerCase()
+  if (['control', 'meta', 'shift', 'alt'].includes(key)) return null
+
+  const parts: string[] = []
+  if (e.ctrlKey || e.metaKey) parts.push('ctrl')
+  if (e.shiftKey) parts.push('shift')
+  if (e.altKey) parts.push('alt')
+  if (parts.length === 0) return null
+
+  parts.push(key === ' ' ? 'space' : key)
+  return parts.join('+')
+}
+
+function ShortcutCapture({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (combo: string) => void
+}) {
+  const [capturing, setCapturing] = useState(false)
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    e.preventDefault()
+    if (e.key === 'Escape') {
+      setCapturing(false)
+      return
+    }
+    const combo = comboFromCapture(e)
+    if (!combo) return
+    onChange(combo)
+    setCapturing(false)
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn btn-sm"
+      onClick={() => setCapturing(true)}
+      onKeyDown={capturing ? onKeyDown : undefined}
+      onBlur={() => setCapturing(false)}
+      style={{ minWidth: 160 }}
+    >
+      {capturing ? 'Press a key combo…' : formatShortcut(value)}
+    </button>
+  )
+}
+
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="card">
@@ -552,6 +624,26 @@ export function SettingsPage() {
           <Field label="Folders first" help="List folders before files when sorting.">
             <Switch checked={s.foldersFirst} onChange={(v) => s.set('foldersFirst', v)} label="Folders first" />
           </Field>
+        </SectionCard>
+      )}
+
+      {tab === 'behavior' && (
+        <SectionCard title="Shortcuts">
+          <Field
+            label="Global shortcut"
+            help="Bring Tanjiro Flow to the front from anywhere in Windows, like Win+E does for File Explorer."
+          >
+            <Switch
+              checked={s.globalShortcutEnabled}
+              onChange={(v) => s.set('globalShortcutEnabled', v)}
+              label="Global shortcut"
+            />
+          </Field>
+          {s.globalShortcutEnabled && (
+            <Field label="Key combo" help="Click, then press the keys you want. Needs at least one of Ctrl, Shift, or Alt.">
+              <ShortcutCapture value={s.globalShortcutKeys} onChange={(combo) => s.set('globalShortcutKeys', combo)} />
+            </Field>
+          )}
         </SectionCard>
       )}
 

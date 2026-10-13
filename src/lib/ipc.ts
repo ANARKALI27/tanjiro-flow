@@ -100,6 +100,9 @@ export const api = {
   // --- default file manager ---
   defaultManagerStatus: () => call<boolean>('default_manager_status'),
   defaultManagerSet: (enable: boolean) => call<void>('default_manager_set', { enable }),
+  /** `combo` uses Tauri accelerator syntax, e.g. "ctrl+shift+e". */
+  globalShortcutSet: (enabled: boolean, combo: string) =>
+    call<void>('global_shortcut_set', { enabled, combo }),
   startupPath: () => call<string | null>('startup_path'),
 
   // --- nearby devices + sharing ---
